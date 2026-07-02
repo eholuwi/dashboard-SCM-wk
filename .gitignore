@@ -1,0 +1,35 @@
+# Dados reais da empresa (confidenciais) — nunca versionar
+*.xlsx
+*.xls
+*.csv
+WK/*.html
+WK/data/*.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+ENV/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Configuração local do Claude Code (específica da máquina)
+.claude/settings.local.json
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editores
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log

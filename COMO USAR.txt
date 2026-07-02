@@ -1,0 +1,67 @@
+================================================================
+  DASHBOARD SCM SEMANAL  -  COMO GERAR
+================================================================
+
+PASSO A PASSO (toda semana):
+
+  1. Coloque a planilha nova "Relatório de SCs ...xlsx" nesta pasta.
+  2. Dê DUPLO-CLIQUE em  ->  "Gerar Dashboard.bat"
+  3. Abre uma janela: escolha a planilha da semana e clique Abrir.
+       (dica: você também pode ARRASTAR o .xlsx para cima do .bat)
+  4. Pronto! O dashboard abre sozinho no navegador e fica salvo em:
+       WK\Dashboard SCM WK<numero-da-semana>.html
+
+----------------------------------------------------------------
+O QUE O DASHBOARD FAZ
+
+  * Todos os números são calculados automaticamente da planilha
+    (abas SCM e SC7). Nada é digitado à mão.
+
+  * TUDO É CLICÁVEL: clique num KPI, numa barra (mês, departamento,
+    comprador), numa fatia do aging, etc. -> abre uma tabela com
+    TODOS os registros por trás daquele número.
+      - Buscar, ordenar, "Ver todos os campos" e "Exportar CSV".
+
+  * Botão Individual / Por Time nos compradores:
+      Time Miguel = Miguel + Adrya   |   Time Davi = Davi + Luis Gabriel
+
+  * Aba "Comparar Semanas": a cada semana gerada, o sistema guarda
+    um resumo e monta sozinho a comparação (tendência + WK atual vs
+    anterior). Quanto mais semanas você gerar, mais rica fica.
+
+----------------------------------------------------------------
+COMPARTILHAR O DASHBOARD COM OUTRAS PESSOAS
+
+  O arquivo gerado "WK\Dashboard SCM WK##.html" e AUTOSSUFICIENTE:
+  todos os dados E os graficos estao embutidos dentro dele.
+
+  Para enviar (Teams, e-mail, WhatsApp, etc.) basta mandar
+  ESSE UNICO arquivo .html. A pessoa so precisa dar duplo-clique
+  para abrir no navegador - nao precisa de internet, nem de Python,
+  nem da pasta "assets".
+
+  IMPORTANTE: dashboards gerados ANTES desta versao podem abrir
+  vazios (sem graficos) quando enviados sozinhos. Basta REGERAR
+  (rodar o .bat de novo) para obter a versao autossuficiente.
+
+----------------------------------------------------------------
+AJUSTES (opcional, para quem mexe no código)
+
+  Abra "gerar_dashboard.py" e edite o bloco CONFIG no topo:
+    - PERIODO_INI / PERIODO_FIM ... período de análise
+    - SLA_ATRASO_DIAS ........... limite de atraso (padrão 15 dias)
+    - COMPRADORES ............... compradores do time e seus apoios
+    - WK_OVERRIDE ............... força um número de semana específico
+
+----------------------------------------------------------------
+ARQUIVOS DO SISTEMA (não apague)
+
+  gerar_dashboard.py .......... o programa que lê a planilha e gera tudo
+  template_dashboard.html ..... o "molde" visual do dashboard
+  Gerar Dashboard.bat ......... o atalho de duplo-clique
+  WK\assets\ .................. bibliotecas dos gráficos (funciona offline)
+  WK\data\ ................... histórico das semanas (para o comparativo)
+  WK\Dashboard SCM WK##.html .. dashboards gerados (um por semana)
+
+Requisito: Python instalado (com pandas e openpyxl).
+================================================================

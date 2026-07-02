@@ -1,0 +1,8 @@
+# Fluxo atual (gerar_dashboard.py)
+pandas>=2.0
+numpy>=1.24
+openpyxl>=3.1
+
+# Fluxo legado (legacy/app.py, opcional)
+streamlit>=1.30
+plotly>=5.18
