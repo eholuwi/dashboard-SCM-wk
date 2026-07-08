@@ -68,6 +68,8 @@ MESES_ABREV = {1: "Jan", 2: "Fev", 3: "Mar", 4: "Abr", 5: "Mai", 6: "Jun",
 FAIXAS_AGING = ["1-3 dias", "4-7 dias", "8-11 dias", "12-15 dias", "16-30 dias",
                 "31-60 dias", "61-70 dias", "71-80 dias", "81-90 dias",
                 "91-100 dias", "> 100 dias"]
+# Faixas dentro do SLA (<= SLA_ATRASO_DIAS): não aparecem no gráfico/lista de aging.
+FAIXAS_AGING_OCULTAS = ["1-3 dias", "4-7 dias", "8-11 dias", "12-15 dias"]
 CORES_AGING = {
     "1-3 dias": "#16A34A", "4-7 dias": "#86EFAC", "8-11 dias": "#FDE68A",
     "12-15 dias": "#FB923C", "16-30 dias": "#FCD34D", "31-60 dias": "#F97316",
@@ -280,6 +282,8 @@ def processar(scm, sc7):
     fx = cot["__faixa"].value_counts()
     aging_labels, aging_values, aging_colors = [], [], []
     for f in FAIXAS_AGING:
+        if f in FAIXAS_AGING_OCULTAS:
+            continue
         q = int(fx.get(f, 0))
         if q > 0:
             aging_labels.append(f); aging_values.append(q); aging_colors.append(CORES_AGING[f])
@@ -328,46 +332,6 @@ def processar(scm, sc7):
         pos_emit_s.append(int(pe)); pos_entr_s.append(int(pen)); pos_ag_s.append(int(max(0, pe - pen)))
         ie = len(g); ien = len(ge)
         it_emit_s.append(int(ie)); it_entr_s.append(int(ien)); it_ag_s.append(int(max(0, ie - ien)))
-
-    # ---------------- SLA aprovação -> emissão PC ----------------
-    sla_labels, sla_values, sla_bins = [], [], []
-    sla_media = sla_mediana = sla_max = 0
-    sla_records = {"cols": [], "rows": []}
-    try:
-        pc_dates = po[[pc_col, "_dt"]].dropna(subset=[pc_col]).copy()
-        pc_dates[pc_col] = pc_dates[pc_col].astype(str).str.strip()
-        pc_dates = pc_dates.drop_duplicates(subset=[pc_col])
-
-        sla = scm_f.copy()
-        sla = sla[sla.get("Pedido").astype(str).str.strip().replace(
-            {"nan": "", "None": "", "NaN": "", "-": ""}) != ""].copy()
-        sla["_pc"] = sla["Pedido"].astype(str).str.strip()
-        sla = sla.merge(pc_dates, left_on="_pc", right_on=pc_col, how="inner")
-        sla["SLA (dias)"] = (sla["_dt"] - sla["_aprov"]).dt.days
-        sla = sla.dropna(subset=["SLA (dias)"])
-        sla = sla[sla["SLA (dias)"] >= 0]
-        if not sla.empty:
-            sla_media = round(float(sla["SLA (dias)"].mean()), 1)
-            sla_mediana = round(float(sla["SLA (dias)"].median()), 1)
-            sla_max = int(sla["SLA (dias)"].max())
-            bins = [(0, 2, "0-2"), (3, 5, "3-5"), (6, 10, "6-10"), (11, 15, "11-15"),
-                    (16, 20, "16-20"), (21, 30, "21-30"), (31, 45, "31-45"),
-                    (46, 60, "46-60"), (61, 100000, "> 60")]
-            for lo, hi, lab in bins:
-                q = int(((sla["SLA (dias)"] >= lo) & (sla["SLA (dias)"] <= hi)).sum())
-                sla_labels.append(lab); sla_values.append(q); sla_bins.append([lo, hi])
-            sla["DT Emissão PC"] = sla["_dt"]
-            sla_records = df_to_records(sla, [
-                {"key": "SC", "label": "SC", "principal": True},
-                {"key": "Pedido", "label": "Pedido/PC", "principal": True},
-                {"key": "Comprador", "label": "Comprador", "principal": True},
-                {"key": "Departamento", "label": "Departamento", "principal": True},
-                {"key": "Aprovação", "label": "Aprovação", "principal": True},
-                {"key": "DT Emissão PC", "label": "Emissão PC", "principal": True},
-                {"key": "SLA (dias)", "label": "SLA (dias)", "principal": True},
-            ])
-    except Exception as e:
-        print(f"(aviso: SLA não calculado: {e})")
 
     # =====================================================================
     # Registros para drill-down
@@ -420,10 +384,8 @@ def processar(scm, sc7):
                        "emitidos": pos_emit_s, "entregues": pos_entr_s, "aguardando": pos_ag_s},
             "po_itens": {"labels": po_labels, "meses": po_meses,
                          "emitidos": it_emit_s, "entregues": it_entr_s, "aguardando": it_ag_s},
-            "sla": {"labels": sla_labels, "values": sla_values, "bins": sla_bins,
-                    "media": sla_media, "mediana": sla_mediana, "max": sla_max},
         },
-        "records": {"cot": cot_records, "po": po_records, "sla": sla_records},
+        "records": {"cot": cot_records, "po": po_records},
         "meta": {"registros": registros},
     }
     snap = {

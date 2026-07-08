@@ -49,6 +49,7 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;background:var(--bg
 .grid-asym{display:grid;grid-template-columns:2fr 1fr;gap:1.1rem}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.3rem 1.4rem;box-shadow:var(--shadow);display:flex;flex-direction:column}
 .card h3{font-size:.9rem;font-weight:700;color:var(--ink2);text-align:center;margin-bottom:.7rem;display:flex;justify-content:center;align-items:center;gap:.4rem}
+.card h3.big{font-size:1.15rem}
 .card .cw{position:relative;flex:1;min-height:290px}
 .card.tall .cw{min-height:360px}
 .clickable{cursor:pointer}
@@ -72,10 +73,6 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;background:var(--bg
 .agl li:last-child{border-bottom:none}
 .agl .l{display:flex;align-items:center;gap:.6rem}
 .agl .cdot{width:11px;height:11px;border-radius:50%}
-.sla-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1rem}
-.sla-kpis .b{background:#F8FAFC;border:1px solid var(--border);border-radius:12px;padding:.9rem;text-align:center}
-.sla-kpis .b .n{font-size:1.7rem;font-weight:800;color:var(--ink)}
-.sla-kpis .b .t{font-size:.72rem;color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:.05em}
 
 /* COMPARE */
 .cmp-table{width:100%;border-collapse:collapse;margin-top:1rem;font-size:.9rem}
@@ -132,19 +129,17 @@ table.data tr:hover{background:#FFF7ED}
     <div class="kpis" id="kpis"></div>
 
     <div class="sec">
-      <h2>1. Evolução Mensal <span class="info" data-t="Itens e SCs em cotação (aberto) por mês de emissão. Clique numa barra para ver os itens do mês.">?</span></h2>
       <div class="grid2">
-        <div class="card"><h3>Qtd. de Itens por Mês (SCs)</h3><div class="cw"><canvas id="c_itens_mes" class="clickable"></canvas></div></div>
-        <div class="card"><h3>Qtd. de SCs por Mês</h3><div class="cw"><canvas id="c_scs_mes" class="clickable"></canvas></div></div>
+        <div class="card"><h3 class="big">Qtd. de Itens por Mês (SCs) <span class="info" data-t="Quantidade de itens em aberto (cotação) por mês de emissão. Clique numa barra para ver os itens do mês.">?</span></h3><div class="cw"><canvas id="c_itens_mes" class="clickable"></canvas></div></div>
+        <div class="card"><h3 class="big">Qtd. de SCs por Mês <span class="info" data-t="Quantidade de SCs em aberto (cotação) por mês de emissão. Clique numa barra para ver as SCs do mês.">?</span></h3><div class="cw"><canvas id="c_scs_mes" class="clickable"></canvas></div></div>
       </div>
     </div>
 
     <div class="sec">
-      <h2>2. Departamentos & Compradores <span class="info" data-t="Itens em cotação por departamento e por comprador. Clique para detalhar.">?</span></h2>
       <div class="grid2">
-        <div class="card tall"><h3>Ranking Departamentos (Top 10)</h3><div class="cw"><canvas id="c_deptos" class="clickable"></canvas></div></div>
+        <div class="card tall"><h3 class="big">Ranking de Departamentos Top 10 Itens <span class="info" data-t="Departamentos com mais itens em aberto (cotação), Top 10. Clique numa barra para detalhar.">?</span></h3><div class="cw"><canvas id="c_deptos" class="clickable"></canvas></div></div>
         <div class="card tall">
-          <h3>Itens por Comprador</h3>
+          <h3 class="big">Itens atribuídos por comprador <span class="info" data-t="Itens em aberto (cotação) atribuídos a cada comprador ou time. Clique numa barra para detalhar.">?</span></h3>
           <div class="toolbar"><div class="seg"><button id="seg_ind" class="on">Individual</button><button id="seg_time">Por Time</button></div></div>
           <div class="cw"><canvas id="c_comp" class="clickable"></canvas></div>
           <div class="hintbar">Adrya apoia o Miguel · Luis Gabriel apoia o Davi</div>
@@ -153,7 +148,7 @@ table.data tr:hover{background:#FFF7ED}
     </div>
 
     <div class="sec">
-      <h2>3. Status dos Pedidos de Compra (POs) <span class="info" data-t="POs e itens emitidos/entregues/aguardando por mês (escopo do time). Entregue = Qtd.Entregue > 0.">?</span></h2>
+      <h2>Status dos Pedidos de Compra (POs) <span class="info" data-t="POs e itens emitidos/entregues/aguardando por mês (escopo do time). Entregue = Qtd.Entregue > 0.">?</span></h2>
       <div class="legend">
         <span><i class="dot" style="background:var(--primary)"></i>Emitidos</span>
         <span><i class="dot" style="background:var(--success)"></i>Entregues</span>
@@ -166,7 +161,7 @@ table.data tr:hover{background:#FFF7ED}
     </div>
 
     <div class="sec">
-      <h2>4. Aging dos Itens em Cotação <span class="info" data-t="Tempo (dias) desde a aprovação até hoje, por faixa. Clique numa fatia ou faixa para detalhar.">?</span></h2>
+      <h2>Aging dos itens em aberto <span class="info" data-t="Tempo (dias) desde a aprovação até hoje para os itens ainda em aberto (cotação). Mostra apenas os itens com mais de 15 dias, que já estão fora do SLA e em atraso. Clique numa fatia ou faixa para detalhar.">?</span></h2>
       <div class="grid-asym">
         <div class="card tall"><h3>Distribuição por Faixa de Dias</h3><div class="cw"><canvas id="c_aging" class="clickable"></canvas></div></div>
         <div class="card"><h3>📋 Detalhamento</h3><ul class="agl" id="aging_list"></ul></div>
@@ -174,16 +169,8 @@ table.data tr:hover{background:#FFF7ED}
     </div>
 
     <div class="sec">
-      <h2>5. Ranking de Aging por Departamento (&gt; __SLA__ dias) <span class="info" data-t="Departamentos com mais itens atrasados (aging maior que o SLA). Clique numa barra.">?</span></h2>
+      <h2>Ranking de Aging por Departamento (&gt; __SLA__ dias) <span class="info" data-t="Departamentos com mais itens atrasados (aging maior que o SLA). Clique numa barra.">?</span></h2>
       <div class="card tall"><h3>Itens Atrasados por Departamento</h3><div class="cw"><canvas id="c_aging_depto" class="clickable"></canvas></div></div>
-    </div>
-
-    <div class="sec" id="sec_sla">
-      <h2>6. SLA: Aprovação → Emissão do PC <span class="info" data-t="Dias entre a aprovação da SC e a emissão do PC. Clique numa barra do histograma para ver os registros.">?</span></h2>
-      <div class="card">
-        <div class="sla-kpis" id="sla_kpis"></div>
-        <div class="cw" style="min-height:280px"><canvas id="c_sla" class="clickable"></canvas></div>
-      </div>
     </div>
   </div>
 
@@ -199,7 +186,7 @@ table.data tr:hover{background:#FFF7ED}
     </div>
   </div>
 
-  <div class="footer">Dashboard SCM · Inventus Power © 2026 · gerado automaticamente a partir da planilha semanal</div>
+  <div class="footer">Dashboard SCM · Inventus Power © 2026 · gerado automaticamente a partir da planilha Relatório SCs</div>
 </div>
 
 <!-- MODAL -->
@@ -410,18 +397,6 @@ new Chart(c('c_aging_depto'),{type:'bar',data:{labels:ch.aging_depto.labels,data
   options:{...baseBar,onClick:onBar(i=>openDrill('Atrasados (>__SLA__d): '+ch.aging_depto.labels[i],'cot',[['Departamento','eq',ch.aging_depto.labels[i]],['Aging (dias)','num_gt',__SLA__]])),
     plugins:{legend:{display:false},datalabels:{color:C.ink,anchor:'end',align:'top',offset:4,font:{weight:'bold',size:15,family:"'Arial Black'"},formatter:v=>v}},
     scales:{...baseBar.scales,y:{...baseBar.scales.y,display:false},x:{...baseBar.scales.x,ticks:{color:C.muted,font:{size:12,weight:'600'},maxRotation:45,minRotation:45}}}}});
-
-/* 9. SLA */
-if(ch.sla.labels.length){
-  document.getElementById('sla_kpis').innerHTML=
-    '<div class="b"><div class="n">'+ch.sla.media+'</div><div class="t">Média (dias)</div></div>'+
-    '<div class="b"><div class="n">'+ch.sla.mediana+'</div><div class="t">Mediana (dias)</div></div>'+
-    '<div class="b"><div class="n">'+ch.sla.max+'</div><div class="t">Máximo (dias)</div></div>';
-  new Chart(c('c_sla'),{type:'bar',data:{labels:ch.sla.labels,datasets:[{data:ch.sla.values,backgroundColor:C.primary,borderRadius:6,barPercentage:.8}]},
-    options:{...baseBar,onClick:onBar(i=>openDrill('SLA '+ch.sla.labels[i]+' dias','sla',[['SLA (dias)','range',ch.sla.bins[i]]])),
-      plugins:{legend:{display:false},datalabels:{color:C.ink,anchor:'end',align:'top',offset:2,font:{weight:'bold',size:12},formatter:v=>v||''}},
-      scales:{...baseBar.scales,y:{...baseBar.scales.y,display:false}}}});
-}else{document.getElementById('sec_sla').style.display='none';}
 
 /* ---------- COMPARE TAB ---------- */
 let trendChart=null,compareBuilt=false;
