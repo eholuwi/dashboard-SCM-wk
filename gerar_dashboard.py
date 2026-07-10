@@ -29,10 +29,19 @@ import numpy as np
 # =====================================================================
 # CONFIG  (ajuste aqui se precisar)
 # =====================================================================
-BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
+# Quando empacotado com PyInstaller (--onefile), os arquivos ficam em dois
+# lugares diferentes: os "recursos" (template/assets) são extraídos para uma
+# pasta temporária (sys._MEIPASS) embutida no .exe; já a planilha, a saída
+# (WK/*.html) e o histórico (WK/data) precisam ficar ao lado do .exe de fato,
+# para persistir entre execuções e para o usuário achar o arquivo escolhido.
+FROZEN    = getattr(sys, "frozen", False)
+APP_DIR   = os.path.dirname(sys.executable) if FROZEN else os.path.dirname(os.path.abspath(__file__))
+RES_DIR   = sys._MEIPASS if FROZEN else APP_DIR  # type: ignore[attr-defined]
+
+BASE_DIR   = APP_DIR
 WK_DIR     = os.path.join(BASE_DIR, "WK")
 DATA_DIR   = os.path.join(WK_DIR, "data")
-TEMPLATE   = os.path.join(BASE_DIR, "template_dashboard.html")
+TEMPLATE   = os.path.join(RES_DIR, "template_dashboard.html")
 
 # Período de análise
 PERIODO_INI = date(2026, 1, 1)
@@ -424,7 +433,7 @@ def carregar_historico():
 # =====================================================================
 def _ler_asset(nome):
     """Lê um arquivo de WK/assets/ como texto (para embutir inline no HTML)."""
-    caminho = os.path.join(WK_DIR, "assets", nome)
+    caminho = os.path.join(RES_DIR, "WK", "assets", nome)
     with open(caminho, "r", encoding="utf-8") as f:
         return f.read()
 

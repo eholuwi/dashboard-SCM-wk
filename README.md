@@ -10,8 +10,9 @@ internet, Python ou pastas externas.
 
 - [Objetivo](#objetivo)
 - [Como funciona](#como-funciona)
+- [Uso rápido (sem instalar nada)](#uso-rápido-sem-instalar-nada)
 - [Tecnologias](#tecnologias)
-- [Instalação](#instalação)
+- [Instalação (fluxo dev / Python)](#instalação-fluxo-dev--python)
 - [Execução](#execução)
 - [Estrutura do projeto](#estrutura-do-projeto)
 - [Configuração](#configuração)
@@ -45,6 +46,30 @@ Relatório de SCs *.xlsx  --(gerar_dashboard.py)-->  WK/Dashboard SCM WK<nn>.htm
 4. Salva um resumo da semana em `WK/data/WK<nn>_<ano>.json` para alimentar a aba
    de comparação nas próximas gerações.
 
+## Uso rápido (sem instalar nada)
+
+Não precisa de Python, VSCode nem `pip install`. Baixe o executável na aba
+[Releases](../../releases) do repositório:
+
+1. Baixe `Gerar Dashboard SCM.exe` e coloque na mesma pasta da planilha da semana.
+2. Dê duplo-clique (ou arraste o `.xlsx` para cima do `.exe`).
+3. O dashboard é gerado e abre sozinho no navegador.
+
+O `.exe` é gerado com [PyInstaller](https://pyinstaller.org/) a partir de
+`gerar_dashboard.py`, com `template_dashboard.html` e `WK/assets/*.js` embutidos.
+Para gerar um novo build depois de alterar o script:
+
+```bash
+pip install pyinstaller
+pyinstaller --onefile --name "Gerar Dashboard SCM" ^
+  --add-data "template_dashboard.html;." ^
+  --add-data "WK/assets;WK/assets" ^
+  gerar_dashboard.py
+```
+
+O executável fica em `dist/` (pasta ignorada pelo git — o binário (~70MB) é
+distribuído via Release, não commitado no repositório).
+
 ## Tecnologias
 
 - **Python 3.10+**, [pandas](https://pandas.pydata.org/) e
@@ -55,7 +80,10 @@ Relatório de SCs *.xlsx  --(gerar_dashboard.py)-->  WK/Dashboard SCM WK<nn>.htm
   2.2.0 vendorizados em `WK/assets/` (embutidos no HTML final, licença MIT).
 - `tkinter` (biblioteca padrão do Python) para o seletor de arquivo.
 
-## Instalação
+## Instalação (fluxo dev / Python)
+
+Só necessário se você for mexer no código-fonte (`gerar_dashboard.py`) — para uso
+do dia a dia, prefira o [.exe pronto](#uso-rápido-sem-instalar-nada).
 
 Pré-requisito: [Python 3.10+](https://www.python.org/downloads/) instalado e no
 PATH (no Windows, marque "Add Python to PATH" durante a instalação).
@@ -151,6 +179,8 @@ Rode a partir da raiz do projeto — o script lê `Solicitações.xlsx` e
   dashboard com a versão atual — o HTML passa a ser 100% autossuficiente.
 - **`ModuleNotFoundError`**: rode `pip install -r requirements.txt` no mesmo
   ambiente Python usado para executar o script.
+- **Não quero lidar com Python de jeito nenhum**: use o
+  [`.exe` da aba Releases](#uso-rápido-sem-instalar-nada) em vez do `.bat`.
 
 ## Roadmap
 

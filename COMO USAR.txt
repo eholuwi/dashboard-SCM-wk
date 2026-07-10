@@ -2,14 +2,27 @@
   DASHBOARD SCM SEMANAL  -  COMO GERAR
 ================================================================
 
-PASSO A PASSO (toda semana):
+PASSO A PASSO (toda semana) — SEM PRECISAR DE PYTHON:
 
-  1. Coloque a planilha nova "Relatório de SCs ...xlsx" nesta pasta.
-  2. Dê DUPLO-CLIQUE em  ->  "Gerar Dashboard.bat"
-  3. Abre uma janela: escolha a planilha da semana e clique Abrir.
-       (dica: você também pode ARRASTAR o .xlsx para cima do .bat)
-  4. Pronto! O dashboard abre sozinho no navegador e fica salvo em:
+  1. Baixe "Gerar Dashboard SCM.exe" (aba Releases do repositório) e
+     coloque nesta mesma pasta, junto com a planilha da semana.
+  2. Coloque a planilha nova "Relatório de SCs ...xlsx" nesta pasta.
+  3. Dê DUPLO-CLIQUE em  ->  "Gerar Dashboard SCM.exe"
+  4. Abre uma janela: escolha a planilha da semana e clique Abrir.
+       (dica: você também pode ARRASTAR o .xlsx para cima do .exe)
+  5. Pronto! O dashboard abre sozinho no navegador e fica salvo em:
        WK\Dashboard SCM WK<numero-da-semana>.html
+
+  Não precisa instalar Python, VSCode nem nada — o .exe já tem
+  tudo embutido. Só baixar e usar.
+
+----------------------------------------------------------------
+ALTERNATIVA (para quem já tem Python instalado / for mexer no código)
+
+  Em vez do .exe, dá pra rodar "Gerar Dashboard.bat", que chama o
+  "gerar_dashboard.py" (requer Python + pandas + openpyxl,
+  ver requirements.txt). Mesmo passo a passo acima, só troca o
+  arquivo do passo 3.
 
 ----------------------------------------------------------------
 O QUE O DASHBOARD FAZ
@@ -56,12 +69,14 @@ AJUSTES (opcional, para quem mexe no código)
 ----------------------------------------------------------------
 ARQUIVOS DO SISTEMA (não apague)
 
-  gerar_dashboard.py .......... o programa que lê a planilha e gera tudo
+  Gerar Dashboard SCM.exe ..... versão pronta p/ usar, sem Python (Releases)
+  gerar_dashboard.py .......... o programa-fonte que lê a planilha e gera tudo
   template_dashboard.html ..... o "molde" visual do dashboard
-  Gerar Dashboard.bat ......... o atalho de duplo-clique
+  Gerar Dashboard.bat ......... atalho p/ quem roda via Python
   WK\assets\ .................. bibliotecas dos gráficos (funciona offline)
   WK\data\ ................... histórico das semanas (para o comparativo)
   WK\Dashboard SCM WK##.html .. dashboards gerados (um por semana)
 
-Requisito: Python instalado (com pandas e openpyxl).
+Requisito: nenhum, se usar o .exe. Só quem for mexer no código
+precisa de Python instalado (com pandas e openpyxl).
 ================================================================
