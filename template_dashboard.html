@@ -54,6 +54,9 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;background:var(--bg
 .card.tall .cw{min-height:360px}
 .clickable{cursor:pointer}
 .toolbar{display:flex;justify-content:center;gap:.4rem;margin-bottom:.6rem}
+.selbar{display:flex;justify-content:center;align-items:center;margin-bottom:1rem;font-weight:700;color:var(--ink2);font-size:.9rem}
+.selbar select{font-family:inherit;font-weight:700;font-size:.9rem;color:var(--ink);background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.45rem .8rem;cursor:pointer;box-shadow:var(--shadow);min-width:220px;max-width:min(90vw,420px)}
+.selbar select:hover{border-color:var(--primary)}
 .seg{display:inline-flex;background:#F1F5F9;border-radius:10px;padding:3px}
 .seg button{border:none;background:transparent;padding:.35rem .8rem;border-radius:8px;font-weight:700;color:var(--muted);cursor:pointer;font-size:.82rem;font-family:inherit}
 .seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.1)}
@@ -171,6 +174,15 @@ table.data tr:hover{background:#FFF7ED}
     <div class="sec">
       <h2>Ranking de Aging por Departamento (&gt; __SLA__ dias) <span class="info" data-t="Departamentos com mais itens atrasados (aging maior que o SLA). Clique numa barra.">?</span></h2>
       <div class="card tall"><h3>Itens Atrasados por Departamento</h3><div class="cw"><canvas id="c_aging_depto" class="clickable"></canvas></div></div>
+    </div>
+
+    <div class="sec">
+      <h2>Itens e SCs por Mês, por Departamento <span class="info" data-t="Itens e SCs em aberto (cotação) por mês de emissão, filtrando por departamento. 'Todos' = visão geral. A soma das barras de um departamento (incluindo 'S/ emissão') é igual à barra dele no Ranking de Departamentos.">?</span></h2>
+      <div class="selbar"><label>Departamento:&nbsp;<select id="sel_depto"></select></label></div>
+      <div class="grid2">
+        <div class="card"><h3 class="big">Qtd. de Itens por Mês (SCs) <span class="info" data-t="Quantidade de itens em aberto do departamento selecionado, por mês de emissão. Clique numa barra para ver os itens.">?</span></h3><div class="cw"><canvas id="c_sel_itens_mes" class="clickable"></canvas></div></div>
+        <div class="card"><h3 class="big">Qtd. de SCs por Mês <span class="info" data-t="Quantidade de SCs em aberto do departamento selecionado, por mês de emissão. Clique numa barra para ver as SCs.">?</span></h3><div class="cw"><canvas id="c_sel_scs_mes" class="clickable"></canvas></div></div>
+      </div>
     </div>
   </div>
 
@@ -336,6 +348,28 @@ new Chart(c('c_itens_mes'),{type:'bar',data:{labels:ch.itens_mes.labels,datasets
 new Chart(c('c_scs_mes'),{type:'bar',data:{labels:ch.scs_mes.labels,datasets:[{data:ch.scs_mes.values,backgroundColor:C.primary,borderRadius:6,barPercentage:.7}]},
   options:{...baseBar,onClick:onBar(i=>openDrill('SCs em '+ch.scs_mes.labels[i],'cot',[['__mes','num_eq',ch.scs_mes.meses[i]]])),
     plugins:{legend:{display:false},datalabels:dlWhite(12)},scales:{...baseBar.scales,y:{...baseBar.scales.y,display:false}}}});
+
+/* 2b. itens/scs por mês COM seletor de departamento (no final) */
+(function(){
+  const mpd = ch.mes_por_depto;
+  const selEl = document.getElementById('sel_depto');
+  if(!mpd || !selEl) return;
+  selEl.innerHTML = mpd.deptos.map(d=>'<option value="'+encodeURIComponent(d)+'">'+d+'</option>').join('');
+  let chI=null, chS=null;
+  function mkChart(id,serie,dep,titulo){
+    const depF = dep==='Todos'?[]:[['Departamento','eq',dep]];
+    return new Chart(c(id),{type:'bar',data:{labels:mpd.labels,datasets:[{data:serie,backgroundColor:C.primary,borderRadius:6,barPercentage:.7}]},
+      options:{...baseBar,onClick:onBar(i=>openDrill(titulo+' · '+dep+' · '+mpd.labels[i],'cot',[['__mes','num_eq',mpd.meses[i]],...depF])),
+        plugins:{legend:{display:false},datalabels:dlWhite(12)},scales:{...baseBar.scales,y:{...baseBar.scales.y,display:false}}}});
+  }
+  function drawSelMes(dep){
+    if(chI)chI.destroy(); if(chS)chS.destroy();
+    chI=mkChart('c_sel_itens_mes',mpd.itens[dep]||[],dep,'Itens');
+    chS=mkChart('c_sel_scs_mes',mpd.scs[dep]||[],dep,'SCs');
+  }
+  selEl.onchange=()=>drawSelMes(decodeURIComponent(selEl.value));
+  drawSelMes('Todos');
+})();
 
 /* 3. deptos (horizontal) */
 new Chart(c('c_deptos'),{type:'bar',data:{labels:ch.deptos.labels,datasets:[{data:ch.deptos.values,backgroundColor:C.primary,borderRadius:6,barPercentage:.8}]},

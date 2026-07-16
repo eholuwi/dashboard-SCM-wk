@@ -68,6 +68,16 @@ COMPRADORES = {
 # True = mais completo porém arquivo maior; False = só colunas principais.
 PO_DRILL_FULL_COLUMNS = True
 
+# Padroniza as colunas da planilha "Solicitações" (export cru do SCM) para o
+# esquema interno usado nos itens em aberto. As chaves são os nomes ORIGINAIS;
+# renomeamos a "Descrição" (linha do PC) antes de promover "Descrição Detalhada"
+# a "Descrição" (descrição do item) — assim não há colisão de nomes de coluna.
+RENAME_SOLIC = {
+    "Número da Solicitação": "SC",
+    "Descrição": "Descrição PC",
+    "Descrição Detalhada": "Descrição",
+}
+
 MESES = {1: "Janeiro", 2: "Fevereiro", 3: "Março", 4: "Abril", 5: "Maio",
          6: "Junho", 7: "Julho", 8: "Agosto", 9: "Setembro", 10: "Outubro",
          11: "Novembro", 12: "Dezembro"}
@@ -93,6 +103,32 @@ def norm(s):
     if not isinstance(s, str):
         s = str(s)
     return unicodedata.normalize("NFKD", s).encode("ASCII", "ignore").decode().lower().strip()
+
+
+def dep_canon(v):
+    """Rótulo canônico de departamento: sem acento, MAIÚSCULO, espaços colapsados.
+    Une variações de grafia (Manutenção / MANUTENÇÃO / MANUTENCAO) num único
+    balde — usado no ranking, no aging por depto, no drill e no seletor por mês,
+    garantindo que os números batam entre si."""
+    if v is None or (isinstance(v, float) and np.isnan(v)):
+        return "SEM DEPARTAMENTO"
+    s = unicodedata.normalize("NFKD", str(v)).encode("ASCII", "ignore").decode()
+    s = " ".join(s.split()).upper().strip()
+    return s if s and s.lower() != "nan" else "SEM DEPARTAMENTO"
+
+
+def sc_key(v):
+    """Chave de junção por número de SC, robusta a int/float/str (28844 == '28844')."""
+    if v is None or (isinstance(v, float) and np.isnan(v)):
+        return ""
+    if isinstance(v, (int, np.integer)):
+        return str(int(v))
+    if isinstance(v, float):
+        return str(int(v)) if v == int(v) else str(v)
+    s = str(v).strip()
+    if s.endswith(".0") and s[:-2].isdigit():
+        s = s[:-2]
+    return s
 
 
 def buyer_label(v, idx=0):
@@ -172,33 +208,49 @@ def df_to_records(df, specs):
     return {"cols": cols_meta, "rows": rows}
 
 
+def _mais_recente(patterns, excluir=None):
+    """Retorna o .xlsx mais recente que casa com algum dos padrões (glob),
+    ignorando temporários do Excel (~$) e um caminho a excluir."""
+    excluir = os.path.abspath(excluir) if excluir else None
+    cands = []
+    for pat in patterns:
+        cands += glob.glob(os.path.join(BASE_DIR, pat))
+    cands = [c for c in cands
+             if not os.path.basename(c).startswith("~$")
+             and (excluir is None or os.path.abspath(c) != excluir)]
+    return max(cands, key=os.path.getmtime) if cands else None
+
+
 def find_xlsx():
-    cands = glob.glob(os.path.join(BASE_DIR, "Relat*rio de SCs*.xlsx"))
-    cands = [c for c in cands if not os.path.basename(c).startswith("~$")]
-    if not cands:
-        cands = [c for c in glob.glob(os.path.join(BASE_DIR, "*.xlsx"))
-                 if not os.path.basename(c).startswith("~$")]
-    if not cands:
-        return None
-    return max(cands, key=os.path.getmtime)
+    return (_mais_recente(["Relat*rio de SCs*.xlsx"])
+            or _mais_recente(["*.xlsx"]))
 
 
-def pick_file():
-    """Argumento de linha de comando > janela de seleção > mais recente."""
-    if len(sys.argv) > 1 and os.path.exists(sys.argv[1]):
-        return sys.argv[1]
-    chosen = None
+def find_solicitacoes(excluir=None):
+    return _mais_recente(["Solicita*.xlsx"], excluir=excluir)
+
+
+def _ask_open(titulo):
+    """Abre uma janela de seleção de .xlsx e devolve o caminho (ou None)."""
     try:
         import tkinter as tk
         from tkinter import filedialog
         root = tk.Tk(); root.withdraw(); root.attributes("-topmost", True)
         chosen = filedialog.askopenfilename(
-            title="Selecione a planilha 'Relatório de SCs' da semana",
-            initialdir=BASE_DIR,
+            title=titulo, initialdir=BASE_DIR,
             filetypes=[("Planilhas Excel", "*.xlsx"), ("Todos", "*.*")])
         root.destroy()
+        return chosen or None
     except Exception as e:
         print(f"(aviso: janela de seleção indisponível: {e})")
+        return None
+
+
+def pick_file():
+    """1º arquivo (Relatório de SCs): CLI arg 1 > janela > mais recente."""
+    if len(sys.argv) > 1 and os.path.exists(sys.argv[1]):
+        return sys.argv[1]
+    chosen = _ask_open("Selecione a planilha 'Relatório de SCs' da semana")
     if chosen:
         return chosen
     auto = find_xlsx()
@@ -207,10 +259,28 @@ def pick_file():
     return auto
 
 
+def pick_solicitacoes(relatorio=None):
+    """2º arquivo (Solicitações — opcional): CLI arg 2 > janela > auto-detecta.
+    Cancelar a janela procura 'Solicita*.xlsx' na pasta; se nada, retorna None
+    (mantém o comportamento antigo, só com o Relatório)."""
+    if len(sys.argv) > 2:
+        return sys.argv[2] if os.path.exists(sys.argv[2]) else None
+    chosen = _ask_open("Selecione a planilha 'Solicitações' (opcional — "
+                       "cancele para usar só o Relatório)")
+    if chosen:
+        return chosen
+    auto = find_solicitacoes(excluir=relatorio)
+    if auto:
+        print(f"Solicitações não escolhida — usando a mais recente: {os.path.basename(auto)}")
+    else:
+        print("Sem planilha 'Solicitações' — usando só o Relatório de SCs.")
+    return auto
+
+
 # =====================================================================
 # Leitura da planilha
 # =====================================================================
-def carregar(path):
+def carregar(path, solic_path=None):
     xls = pd.ExcelFile(path)
 
     # aba SCM (header linha 0)
@@ -228,27 +298,73 @@ def carregar(path):
     sc7 = pd.read_excel(path, sheet_name="SC7", header=hdr)
     sc7.columns = [str(c).strip() for c in sc7.columns]
 
-    return scm, sc7
+    # Planilha "Solicitações" (opcional): export cru do SCM, mais atualizado.
+    # Vira a fonte dos itens em aberto (sobrepõe a aba SCM). Não traz
+    # Departamento — ele é cruzado por número da SC lá em processar().
+    solic = None
+    if solic_path and os.path.exists(solic_path):
+        sx = pd.ExcelFile(solic_path)
+        # a 1ª aba costuma ser "Solicitações"; usa a que tiver "Número da Solicitação".
+        alvo = sx.sheet_names[0]
+        for sn in sx.sheet_names:
+            cols = pd.read_excel(solic_path, sheet_name=sn, header=0, nrows=0).columns
+            if any(norm(c) == "numero da solicitacao" for c in cols):
+                alvo = sn
+                break
+        solic = pd.read_excel(solic_path, sheet_name=alvo, header=0)
+        solic.columns = [str(c).strip() for c in solic.columns]
+        solic = solic.rename(columns=RENAME_SOLIC)
+        # remove eventual linha-cabeçalho repetida no corpo
+        if "SC" in solic.columns:
+            solic = solic[solic["SC"].astype(str).str.strip() != "Número da Solicitação"]
+
+    return scm, sc7, solic
 
 
 # =====================================================================
 # Cálculo das métricas + montagem do payload
 # =====================================================================
-def processar(scm, sc7):
-    # ---------------- SCM ----------------
+def processar(scm, sc7, solic=None):
+    # ---------------- Fonte dos itens em aberto ----------------
+    # Mapa SC -> Departamento (canônico) aprendido na aba SCM do Relatório.
     scm = scm.copy()
-    scm["_aprov"] = pd.to_datetime(scm.get("Aprovação"), errors="coerce")
-    scm["_emiss"] = pd.to_datetime(scm.get("Emissão"), errors="coerce")
-    scm["_status"] = scm.get("Status").astype(str).apply(norm)
+    if "Departamento" in scm.columns:
+        scm["Departamento"] = scm["Departamento"].apply(dep_canon)
+    dep_map = {}
+    if "SC" in scm.columns and "Departamento" in scm.columns:
+        for sc_val, dep_val in zip(scm["SC"], scm["Departamento"]):
+            k = sc_key(sc_val)
+            if k and k not in dep_map:
+                dep_map[k] = dep_val
 
-    mask = (scm["_aprov"].dt.date >= PERIODO_INI) & (scm["_aprov"].dt.date <= PERIODO_FIM)
-    scm_f = scm[mask].copy()
-    registros = len(scm_f)
+    # Se veio a planilha "Solicitações" (mais atualizada), ela sobrepõe a aba
+    # SCM como fonte dos itens em aberto; o Departamento vem do dep_map por SC.
+    if solic is not None:
+        src = solic.copy()
+        if "SC" in src.columns:
+            src["Departamento"] = src["SC"].map(lambda v: dep_map.get(sc_key(v), "SEM DEPARTAMENTO"))
+            _match = src["SC"].map(lambda v: sc_key(v) in dep_map)
+            print(f"  Fonte de itens: Solicitações ({len(src):,} linhas) | "
+                  f"SCs com depto cruzado: {int(_match.sum()):,} | "
+                  f"sem match: {int((~_match).sum()):,}")
+        else:
+            src["Departamento"] = "SEM DEPARTAMENTO"
+    else:
+        src = scm.copy()
+        print(f"  Fonte de itens: aba SCM do Relatório ({len(src):,} linhas)")
 
-    total_itens = len(scm_f)
-    total_scs = scm_f["SC"].nunique() if "SC" in scm_f else 0
+    src["_aprov"] = pd.to_datetime(src.get("Aprovação"), errors="coerce")
+    src["_emiss"] = pd.to_datetime(src.get("Emissão"), errors="coerce")
+    src["_status"] = src.get("Status").astype(str).apply(norm)
 
-    cot = scm_f[scm_f["_status"] == "cotacao"].copy()
+    mask = (src["_aprov"].dt.date >= PERIODO_INI) & (src["_aprov"].dt.date <= PERIODO_FIM)
+    src_f = src[mask].copy()
+    registros = len(src_f)
+
+    total_itens = len(src_f)
+    total_scs = src_f["SC"].nunique() if "SC" in src_f else 0
+
+    cot = src_f[src_f["_status"] == "cotacao"].copy()
 
     hoje = pd.Timestamp.now().normalize()
     cot["Aging (dias)"] = (hoje - cot["_aprov"]).dt.days
@@ -275,6 +391,33 @@ def processar(scm, sc7):
            .sort_values("q", ascending=False).head(10)) if "Departamento" in cot else pd.DataFrame(columns=["Departamento", "q"])
     dep_labels = [str(x) for x in dep["Departamento"].tolist()]
     dep_values = [int(x) for x in dep["q"].tolist()]
+
+    # Itens/SCs por mês COM seletor de departamento — derivado do MESMO `cot`
+    # que alimenta o ranking, para que a soma dos meses (incl. balde "S/ emissão")
+    # de cada depto bata exatamente com a barra do ranking. Nada é descartado.
+    meses_mpd = sorted([m for m in cot["__mes"].unique() if m > 0])
+    tem_sem_emissao = bool((cot["__mes"] == 0).any())
+    mpd_meses = meses_mpd + ([0] if tem_sem_emissao else [])
+    mpd_labels = [MESES_ABREV[m] for m in meses_mpd] + (["S/ emissão"] if tem_sem_emissao else [])
+    # ordem dos deptos = por qtd de itens desc (mesma lógica do ranking, todos)
+    dep_ordem = (cot.groupby("Departamento").size().sort_values(ascending=False).index.tolist()
+                 if "Departamento" in cot else [])
+    mpd_deptos = ["Todos"] + [str(d) for d in dep_ordem]
+    mpd_itens, mpd_scs = {}, {}
+
+    def _serie_itens(frame):
+        return [int((frame["__mes"] == m).sum()) for m in mpd_meses]
+
+    def _serie_scs(frame):
+        return [int(frame[frame["__mes"] == m]["SC"].nunique()) if "SC" in frame else 0
+                for m in mpd_meses]
+
+    mpd_itens["Todos"] = _serie_itens(cot)
+    mpd_scs["Todos"] = _serie_scs(cot)
+    for d in dep_ordem:
+        sub = cot[cot["Departamento"] == d]
+        mpd_itens[str(d)] = _serie_itens(sub)
+        mpd_scs[str(d)] = _serie_scs(sub)
 
     # compradores (individual e time)
     ordem_ind = ["Davi", "Miguel", "Luis Gabriel", "Adrya", "Sem comprador"]
@@ -351,7 +494,7 @@ def processar(scm, sc7):
     cot_specs = []
     for k in cot_principais:
         cot_specs.append({"key": k, "label": k, "principal": True})
-    for k in scm.columns:
+    for k in src.columns:
         if k in cot_principais or str(k).startswith("_"):
             continue
         cot_specs.append({"key": k, "label": k, "principal": False})
@@ -384,6 +527,8 @@ def processar(scm, sc7):
             "itens_mes": {"labels": labels_mes, "values": itens_mes, "meses": meses_presentes},
             "scs_mes": {"labels": labels_mes, "values": scs_mes, "meses": meses_presentes},
             "deptos": {"labels": dep_labels, "values": dep_values},
+            "mes_por_depto": {"deptos": mpd_deptos, "labels": mpd_labels, "meses": mpd_meses,
+                              "itens": mpd_itens, "scs": mpd_scs},
             "comp_ind": {"labels": ci_labels, "values": ci_values},
             "comp_time": {"labels": ct_labels, "values": ct_values},
             "aging": {"labels": aging_labels, "values": aging_values, "pct": aging_pct,
@@ -487,12 +632,15 @@ def main():
         print("ERRO: nenhuma planilha encontrada/selecionada.")
         input("Pressione Enter para sair..."); return
 
+    solic_arq = pick_solicitacoes(relatorio=arquivo)
+
     print(f"Lendo: {os.path.basename(arquivo)} ...")
-    scm, sc7 = carregar(arquivo)
-    print(f"  SCM: {len(scm):,} linhas | SC7: {len(sc7):,} linhas")
+    scm, sc7, solic = carregar(arquivo, solic_arq)
+    print(f"  SCM: {len(scm):,} linhas | SC7: {len(sc7):,} linhas"
+          + (f" | Solicitações: {len(solic):,} linhas" if solic is not None else ""))
 
     print("Calculando métricas ...")
-    dash, snap = processar(scm, sc7)
+    dash, snap = processar(scm, sc7, solic)
     k = dash["kpis"]
     print(f"  Itens abertos: {k['itens_abertos']} | SCs abertas: {k['scs_abertas']} "
           f"| POs: {k['pos_emitidos']} | Itens c/ PO: {k['itens_pos']}")
@@ -513,7 +661,10 @@ def main():
         print(f"ERRO: template não encontrado: {TEMPLATE}")
         input("Pressione Enter para sair..."); return
 
-    out = render(dash, hist, wk, ano, label, gerado, arquivo)
+    fonte = os.path.basename(arquivo)
+    if solic is not None and solic_arq:
+        fonte += " + " + os.path.basename(solic_arq)
+    out = render(dash, hist, wk, ano, label, gerado, fonte)
     size_mb = os.path.getsize(out) / 1e6
     print(f"Dashboard gerado: {out}  ({size_mb:.1f} MB)")
 
