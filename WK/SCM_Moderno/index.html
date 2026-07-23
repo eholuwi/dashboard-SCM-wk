@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard SCM Completo - Inventus Power</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@mdi/font@7.2.96/css/materialdesignicons.min.css" rel="stylesheet">
+  
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <i class="mdi mdi-cube-outline"></i>
+      Inventus Power
+    </div>
+    <ul class="sidebar-menu">
+      <li class="menu-category">Menu Principal</li>
+      <li><a href="#" class="menu-item active"><i class="mdi mdi-view-dashboard-outline"></i> Dashboard</a></li>
+      <li><a href="#" class="menu-item"><i class="mdi mdi-package-variant-closed"></i> Inventário</a></li>
+      <li><a href="#" class="menu-item"><i class="mdi mdi-link-variant"></i> SCM Integrado</a></li>
+      
+      <li class="menu-category">Operação</li>
+      <li><a href="#" class="menu-item"><i class="mdi mdi-text-box-outline"></i> Solicitações</a></li>
+      <li><a href="#" class="menu-item"><i class="mdi mdi-cart-outline"></i> Compras</a></li>
+      <li><a href="#" class="menu-item"><i class="mdi mdi-clipboard-text-outline"></i> Requisições</a></li>
+      
+      <li class="menu-category">Gestão</li>
+      <li><a href="#" class="menu-item"><i class="mdi mdi-chart-line"></i> Indicadores</a></li>
+      <li><a href="#" class="menu-item"><i class="mdi mdi-file-document-outline"></i> Relatórios</a></li>
+      <li><a href="#" class="menu-item"><i class="mdi mdi-cog-outline"></i> Administração</a></li>
+    </ul>
+    
+    <div class="sidebar-footer">
+      <div class="sidebar-footer-item"><i class="mdi mdi-help-circle-outline"></i> Ajuda e Suporte</div>
+    </div>
+  </aside>
+
+  <!-- MAIN WRAPPER -->
+  <div class="main-wrapper">
+    
+    <!-- HEADER -->
+    <header class="header">
+      <div class="header-left">
+        <h1 class="title" style="font-size: 24px; color: var(--text-main);">Dashboard SCM</h1>
+      </div>
+      <div class="header-right">
+        <div class="header-alerts">
+          <i class="mdi mdi-bell-outline"></i>
+          <span class="badge">3</span>
+        </div>
+        <div class="user-profile">
+          <img src="https://ui-avatars.com/api/?name=Admin+User&background=F58220&color=fff&rounded=true" alt="User" class="avatar">
+          <span>Admin User</span>
+          <i class="mdi mdi-chevron-down text-muted"></i>
+        </div>
+      </div>
+    </header>
+
+    <!-- CONTENT AREA -->
+    <main class="content-area">
+      
+      <!-- FILTROS GLOBAIS -->
+      <section class="global-filters">
+        <div class="filter-group">
+          <label>Período</label>
+          <select>
+            <option>Últimos 30 dias</option>
+            <option>Esta Semana</option>
+            <option>Este Mês</option>
+            <option>Ano Atual</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Centro de Custo</label>
+          <select>
+            <option>Todos</option>
+            <option>Produção</option>
+            <option>Engenharia</option>
+            <option>Administrativo</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Fornecedor</label>
+          <select>
+            <option>Todos</option>
+            <option>Fornecedor A</option>
+            <option>Fornecedor B</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Status</label>
+          <select>
+            <option>Todos</option>
+            <option>Aprovado</option>
+            <option>Pendente</option>
+          </select>
+        </div>
+        <div style="margin-left: auto;">
+          <button class="btn btn-primary" style="margin-top: 18px;">
+            <i class="mdi mdi-filter"></i> Aplicar Filtros
+          </button>
+        </div>
+      </section>
+
+      <!-- KPI GRID -->
+      <section class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <div class="kpi-icon icon-orange">
+              <i class="mdi mdi-file-document-multiple-outline"></i>
+            </div>
+            <div class="kpi-trend trend-up">
+              <i class="mdi mdi-trending-up"></i> +12%
+            </div>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-number">3.248</div>
+            <div class="kpi-title">Solicitações Totais</div>
+            <div class="kpi-desc">Volume total no período selecionado</div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <div class="kpi-icon icon-green">
+              <i class="mdi mdi-check-circle-outline"></i>
+            </div>
+            <div class="kpi-trend trend-up">
+              <i class="mdi mdi-trending-up"></i> +18%
+            </div>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-number">1.281</div>
+            <div class="kpi-title">Aprovações</div>
+            <div class="kpi-desc">Solicitações aprovadas pelos gerentes</div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <div class="kpi-icon icon-blue">
+              <i class="mdi mdi-currency-usd"></i>
+            </div>
+            <div class="kpi-trend trend-up">
+              <i class="mdi mdi-trending-up"></i> +5%
+            </div>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-number">R$ 2.4M</div>
+            <div class="kpi-title">Volume Financeiro</div>
+            <div class="kpi-desc">Total transacionado aprovado</div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <div class="kpi-icon icon-red">
+              <i class="mdi mdi-alert-circle-outline"></i>
+            </div>
+            <div class="kpi-trend trend-down">
+              <i class="mdi mdi-trending-down"></i> -2%
+            </div>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-number">45</div>
+            <div class="kpi-title">Rejeições</div>
+            <div class="kpi-desc">Devoluções por divergência</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- INDICADORES SECUNDÁRIOS -->
+      <section class="indicators-row">
+        <div class="indicator-item">
+          <div class="ind-label">Tempo Médio Aprovação</div>
+          <div class="ind-value">1.2 dias</div>
+        </div>
+        <div class="indicator-item">
+          <div class="ind-label">On-Time Delivery (OTD)</div>
+          <div class="ind-value text-positive">94%</div>
+        </div>
+        <div class="indicator-item">
+          <div class="ind-label">Saving Realizado</div>
+          <div class="ind-value">R$ 145K</div>
+        </div>
+        <div class="indicator-item">
+          <div class="ind-label">SLA Fornecedores</div>
+          <div class="ind-value">98.5%</div>
+        </div>
+      </section>
+
+      <!-- CHARTS -->
+      <section class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-card-title">
+            Volume de Solicitações vs Tempo
+            <div class="chart-actions">
+              <button><i class="mdi mdi-dots-horizontal"></i></button>
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas id="lineChart"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-card-title">
+            Distribuição por Status
+            <div class="chart-actions">
+              <button><i class="mdi mdi-dots-horizontal"></i></button>
+            </div>
+          </div>
+          <div class="chart-container" style="display: flex; justify-content: center;">
+            <canvas id="doughnutChart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- BOTTOM SECTION: TABLE + WIDGETS -->
+      <div class="bottom-layout">
+        
+        <!-- MAIN TABLE -->
+        <div class="main-column">
+          <section class="table-card">
+            <div class="table-header-row">
+              <h2 class="title" style="font-size: 18px;">Tabela Inteligente - Últimas Movimentações</h2>
+              <div class="table-actions">
+                <div class="search-box">
+                  <i class="mdi mdi-magnify"></i>
+                  <input type="text" placeholder="Buscar ID, Fornecedor...">
+                </div>
+                <button class="btn"><i class="mdi mdi-export-variant"></i> Exportar</button>
+              </div>
+            </div>
+            
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>ID Sol. <i class="mdi mdi-swap-vertical"></i></th>
+                    <th>Solicitante <i class="mdi mdi-swap-vertical"></i></th>
+                    <th>Centro Custo</th>
+                    <th>Data <i class="mdi mdi-swap-vertical"></i></th>
+                    <th>Valor (R$)</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>#SCM-1042</strong></td>
+                    <td>Carlos Souza</td>
+                    <td>Engenharia</td>
+                    <td>23/07/2026</td>
+                    <td>R$ 1.450,00</td>
+                    <td><span class="status-badge status-approved">Aprovado</span></td>
+                    <td>
+                      <button class="btn-icon"><i class="mdi mdi-eye"></i></button>
+                      <button class="btn-icon"><i class="mdi mdi-content-copy"></i></button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>#SCM-1043</strong></td>
+                    <td>Maria Silva</td>
+                    <td>Administrativo</td>
+                    <td>23/07/2026</td>
+                    <td>R$ 3.200,00</td>
+                    <td><span class="status-badge status-pending">Pendente</span></td>
+                    <td>
+                      <button class="btn-icon"><i class="mdi mdi-eye"></i></button>
+                      <button class="btn-icon"><i class="mdi mdi-content-copy"></i></button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>#SCM-1044</strong></td>
+                    <td>João Pereira</td>
+                    <td>Produção</td>
+                    <td>22/07/2026</td>
+                    <td>R$ 8.900,00</td>
+                    <td><span class="status-badge status-rejected">Rejeitado</span></td>
+                    <td>
+                      <button class="btn-icon"><i class="mdi mdi-eye"></i></button>
+                      <button class="btn-icon"><i class="mdi mdi-content-copy"></i></button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>#SCM-1045</strong></td>
+                    <td>Ana Costa</td>
+                    <td>Produção</td>
+                    <td>22/07/2026</td>
+                    <td>R$ 450,00</td>
+                    <td><span class="status-badge status-approved">Aprovado</span></td>
+                    <td>
+                      <button class="btn-icon"><i class="mdi mdi-eye"></i></button>
+                      <button class="btn-icon"><i class="mdi mdi-content-copy"></i></button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>#SCM-1046</strong></td>
+                    <td>Fernanda Lima</td>
+                    <td>TI</td>
+                    <td>21/07/2026</td>
+                    <td>R$ 12.300,00</td>
+                    <td><span class="status-badge status-approved">Aprovado</span></td>
+                    <td>
+                      <button class="btn-icon"><i class="mdi mdi-eye"></i></button>
+                      <button class="btn-icon"><i class="mdi mdi-content-copy"></i></button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            
+            <div class="table-pagination">
+              <span>Mostrando 1 a 5 de 142 registros</span>
+              <div class="pagination-controls">
+                <button disabled><i class="mdi mdi-chevron-left"></i></button>
+                <button class="active">1</button>
+                <button>2</button>
+                <button>3</button>
+                <button><i class="mdi mdi-chevron-right"></i></button>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- SIDE WIDGETS -->
+        <div class="widgets-column">
+          
+          <!-- AI INSIGHTS -->
+          <div class="widget-card ai-insights">
+            <div class="widget-header">
+              <i class="mdi mdi-robot-outline text-primary"></i>
+              <h3>Insights IA</h3>
+            </div>
+            <div class="insight-content">
+              <p>Notamos um <strong>aumento de 18%</strong> nas solicitações do centro de custo <strong>Produção</strong> na última semana.</p>
+              <div class="insight-action">Analisar Causa Raiz <i class="mdi mdi-arrow-right"></i></div>
+            </div>
+          </div>
+
+          <!-- ALERTAS -->
+          <div class="widget-card">
+            <div class="widget-header">
+              <i class="mdi mdi-alert-outline text-negative"></i>
+              <h3>Alertas Ativos</h3>
+            </div>
+            <ul class="alerts-list">
+              <li class="alert-item high-priority">
+                <div class="alert-icon"><i class="mdi mdi-close-circle"></i></div>
+                <div class="alert-text">
+                  <strong>Ruptura de Estoque MRO</strong>
+                  <span>Atenção imediata requerida no setor B2.</span>
+                </div>
+              </li>
+              <li class="alert-item medium-priority">
+                <div class="alert-icon"><i class="mdi mdi-alert"></i></div>
+                <div class="alert-text">
+                  <strong>Atraso Fornecedor A</strong>
+                  <span>Entrega com 2 dias de atraso.</span>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <!-- TIMELINE -->
+          <div class="widget-card">
+            <div class="widget-header">
+              <i class="mdi mdi-timeline-text-outline text-muted"></i>
+              <h3>Timeline Recente</h3>
+            </div>
+            <div class="timeline">
+              <div class="timeline-item">
+                <div class="timeline-marker bg-positive"></div>
+                <div class="timeline-content">
+                  <strong>Solicitação #1042 Aprovada</strong>
+                  <span>Por Diretor de Operações - 10:30</span>
+                </div>
+              </div>
+              <div class="timeline-item">
+                <div class="timeline-marker bg-primary"></div>
+                <div class="timeline-content">
+                  <strong>Nova Solicitação #1046</strong>
+                  <span>Gerada por Fernanda Lima - 09:15</span>
+                </div>
+              </div>
+              <div class="timeline-item">
+                <div class="timeline-marker bg-negative"></div>
+                <div class="timeline-content">
+                  <strong>Rejeição de Verba #1044</strong>
+                  <span>Falta de centro de custo - Ontem</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="scripts.js"></script>
+</body>
+</html>

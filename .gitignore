@@ -4,6 +4,13 @@
 *.csv
 WK/*.html
 WK/data/*.json
+# cache da coleta pela API (itens de pedido + relatório baixado)
+WK/cache/
+# zips de distribuição: costumam levar dentro os HTML/JSON gerados (dados reais)
+*.zip
+
+# Chart.js já está em WK/assets/ — não versionar as cópias do protótipo (3,5 MB cada)
+WK/SCM_Moderno/script*.js
 
 # Python
 __pycache__/
