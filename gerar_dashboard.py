@@ -96,6 +96,35 @@ CORES_AGING = {
     "91-100 dias": "#7F1D1D", "> 100 dias": "#450A0A",
 }
 
+# SLA "Aprovação do gestor -> Emissão do Pedido (P.O.)": mesmas 10 faixas/cores
+# visuais do Aging (verde -> vermelho), só muda a regra de agrupamento.
+# Prazo padrão de emissão do Pedido após a aprovação da SC.
+SLA_EMISSAO_DIAS = 15
+FAIXAS_SLA = ["1-3 dias", "4-7 dias", "8-11 dias", "12-15 dias", "16-19 dias",
+              "20-23 dias", "24-27 dias", "28-31 dias", "32-35 dias", "> 35 dias"]
+CORES_SLA = {
+    "1-3 dias": "#16A34A", "4-7 dias": "#86EFAC", "8-11 dias": "#FDE68A",
+    "12-15 dias": "#FB923C", "16-19 dias": "#FCD34D", "20-23 dias": "#F97316",
+    "24-27 dias": "#EF4444", "28-31 dias": "#DC2626", "32-35 dias": "#991B1B",
+    "> 35 dias": "#7F1D1D",
+}
+
+
+def categorizar_sla(dias):
+    """Faixa de SLA (dias corridos entre aprovação da SC e emissão do Pedido)."""
+    if pd.isna(dias) or dias < 0:
+        return None
+    if dias <= 3:   return "1-3 dias"
+    if dias <= 7:   return "4-7 dias"
+    if dias <= 11:  return "8-11 dias"
+    if dias <= 15:  return "12-15 dias"
+    if dias <= 19:  return "16-19 dias"
+    if dias <= 23:  return "20-23 dias"
+    if dias <= 27:  return "24-27 dias"
+    if dias <= 31:  return "28-31 dias"
+    if dias <= 35:  return "32-35 dias"
+    return "> 35 dias"
+
 # =====================================================================
 # Helpers
 # =====================================================================
@@ -221,13 +250,34 @@ def _mais_recente(patterns, excluir=None):
     return max(cands, key=os.path.getmtime) if cands else None
 
 
-def find_xlsx():
-    return (_mais_recente(["Relat*rio de SCs*.xlsx"])
-            or _mais_recente(["*.xlsx"]))
-
-
 def find_solicitacoes(excluir=None):
+    """Fonte principal de itens/SCs (mais atualizada)."""
     return _mais_recente(["Solicita*.xlsx"], excluir=excluir)
+
+
+def find_compras(excluir=None):
+    """Fonte principal de Pedidos/P.O. (aba SC7 do Relatório de Compras)."""
+    return _mais_recente(["Relat*rio de Compras*.xlsx"], excluir=excluir)
+
+
+def find_scs(excluir=None):
+    """Fonte AUXILIAR: só fornece o Departamento (aba SCM do Relatório de SCs)."""
+    return _mais_recente(["Relat*rio de SCs*.xlsx"], excluir=excluir)
+
+
+def _classificar_xlsx(paths):
+    """Classifica caminhos .xlsx passados na CLI pelo nome do arquivo, para que
+    a ordem dos argumentos não importe (arrastar qualquer um sobre o .bat)."""
+    b = {"solic": None, "compras": None, "scs": None}
+    for p in paths:
+        n = norm(os.path.basename(p))
+        if "solicita" in n:
+            b["solic"] = b["solic"] or p
+        elif "compras" in n:
+            b["compras"] = b["compras"] or p
+        elif "scs" in n:
+            b["scs"] = b["scs"] or p
+    return b
 
 
 def _ask_open(titulo):
@@ -246,48 +296,47 @@ def _ask_open(titulo):
         return None
 
 
-def pick_file():
-    """1º arquivo (Relatório de SCs): CLI arg 1 > janela > mais recente."""
-    if len(sys.argv) > 1 and os.path.exists(sys.argv[1]):
-        return sys.argv[1]
-    chosen = _ask_open("Selecione a planilha 'Relatório de SCs' da semana")
-    if chosen:
-        return chosen
-    auto = find_xlsx()
-    if auto:
-        print(f"Nenhum arquivo escolhido — usando o mais recente: {os.path.basename(auto)}")
-    return auto
+def resolver_arquivos():
+    """Localiza as 3 planilhas. Fontes PRINCIPAIS: Solicitações (itens/SCs) e
+    Relatório de Compras (Pedidos/P.O.). Fonte AUXILIAR: Relatório de SCs (só o
+    Departamento). Prioridade por arquivo: CLI (classificada pelo nome) >
+    auto-detecção na pasta > janela de seleção (fallback só p/ as principais).
+    Retorna (solic, compras, scs) — 'scs' pode ser None (segue sem Departamento).
+    """
+    args = [a for a in sys.argv[1:] if a.lower().endswith(".xlsx") and os.path.exists(a)]
+    cls = _classificar_xlsx(args)
 
+    solic   = cls["solic"]   or find_solicitacoes()
+    compras = cls["compras"] or find_compras()
+    scs     = cls["scs"]     or find_scs()
 
-def pick_solicitacoes(relatorio=None):
-    """2º arquivo (Solicitações — opcional): CLI arg 2 > janela > auto-detecta.
-    Cancelar a janela procura 'Solicita*.xlsx' na pasta; se nada, retorna None
-    (mantém o comportamento antigo, só com o Relatório)."""
-    if len(sys.argv) > 2:
-        return sys.argv[2] if os.path.exists(sys.argv[2]) else None
-    chosen = _ask_open("Selecione a planilha 'Solicitações' (opcional — "
-                       "cancele para usar só o Relatório)")
-    if chosen:
-        return chosen
-    auto = find_solicitacoes(excluir=relatorio)
-    if auto:
-        print(f"Solicitações não escolhida — usando a mais recente: {os.path.basename(auto)}")
+    if solic:
+        print(f"  Solicitações (itens/SCs): {os.path.basename(solic)}")
     else:
-        print("Sem planilha 'Solicitações' — usando só o Relatório de SCs.")
-    return auto
+        solic = _ask_open("Selecione a planilha 'Solicitações' (fonte principal de SCs)")
+
+    if compras:
+        print(f"  Relatório de Compras (P.O.): {os.path.basename(compras)}")
+    else:
+        compras = _ask_open("Selecione a planilha 'Relatório de Compras' (Pedidos/P.O.)")
+
+    if scs:
+        print(f"  Relatório de SCs (aux. Departamento): {os.path.basename(scs)}")
+    else:
+        scs = _ask_open("Selecione 'Relatório de SCs' (auxiliar de Departamento — "
+                        "opcional; cancele para seguir sem)")
+        if not scs:
+            print("  Sem 'Relatório de SCs' — itens ficarão SEM DEPARTAMENTO.")
+
+    return solic, compras, scs
 
 
 # =====================================================================
 # Leitura da planilha
 # =====================================================================
-def carregar(path, solic_path=None):
-    xls = pd.ExcelFile(path)
-
-    # aba SCM (header linha 0)
-    scm = pd.read_excel(path, sheet_name="SCM", header=0)
-    scm.columns = [str(c).strip() for c in scm.columns]
-
-    # aba SC7 — o cabeçalho fica após algumas linhas de título; detecta.
+def _ler_sc7(path):
+    """Lê a aba SC7 de uma planilha (Relatório de Compras ou de SCs). O cabeçalho
+    pode ficar após algumas linhas de título — detecta pelas 10 primeiras linhas."""
     raw = pd.read_excel(path, sheet_name="SC7", header=None, nrows=10)
     hdr = 0
     for i in range(len(raw)):
@@ -297,10 +346,27 @@ def carregar(path, solic_path=None):
             break
     sc7 = pd.read_excel(path, sheet_name="SC7", header=hdr)
     sc7.columns = [str(c).strip() for c in sc7.columns]
+    return sc7
 
-    # Planilha "Solicitações" (opcional): export cru do SCM, mais atualizado.
-    # Vira a fonte dos itens em aberto (sobrepõe a aba SCM). Não traz
-    # Departamento — ele é cruzado por número da SC lá em processar().
+
+def carregar(scs_path=None, solic_path=None, compras_path=None):
+    # aba SCM — fonte AUXILIAR (só o mapa de Departamento). Vem do Relatório de
+    # SCs; se ele não existir, segue com SCM vazio (itens sem Departamento).
+    if scs_path and os.path.exists(scs_path):
+        scm = pd.read_excel(scs_path, sheet_name="SCM", header=0)
+        scm.columns = [str(c).strip() for c in scm.columns]
+    else:
+        scm = pd.DataFrame()
+
+    # aba SC7 (Pedidos/P.O.) — fonte PRINCIPAL: Relatório de Compras. Faz
+    # fallback para a aba SC7 do Relatório de SCs (compatibilidade com o fluxo
+    # antigo) caso o Relatório de Compras não seja informado.
+    sc7_src = compras_path if (compras_path and os.path.exists(compras_path)) else scs_path
+    sc7 = _ler_sc7(sc7_src) if (sc7_src and os.path.exists(sc7_src)) else pd.DataFrame()
+
+    # Planilha "Solicitações" — fonte PRINCIPAL dos itens/SCs (export cru do SCM,
+    # mais atualizado). Não traz Departamento — ele é cruzado por SC/Solicitante
+    # contra a aba SCM (auxiliar) lá em processar().
     solic = None
     if solic_path and os.path.exists(solic_path):
         sx = pd.ExcelFile(solic_path)
@@ -326,31 +392,49 @@ def carregar(path, solic_path=None):
 # =====================================================================
 def processar(scm, sc7, solic=None):
     # ---------------- Fonte dos itens em aberto ----------------
-    # Mapa SC -> Departamento (canônico) aprendido na aba SCM do Relatório.
+    # Mapas de Departamento (canônico) aprendidos na aba SCM (auxiliar): por nº
+    # de SC e por Solicitante. Solicitações não traz Departamento — o cruzamento
+    # é por SC (exato) e, quando a SC é nova/ausente, por Solicitante (cobre SCs
+    # que ainda não existiam no Relatório de SCs).
     scm = scm.copy()
     if "Departamento" in scm.columns:
         scm["Departamento"] = scm["Departamento"].apply(dep_canon)
-    dep_map = {}
-    if "SC" in scm.columns and "Departamento" in scm.columns:
-        for sc_val, dep_val in zip(scm["SC"], scm["Departamento"]):
-            k = sc_key(sc_val)
-            if k and k not in dep_map:
-                dep_map[k] = dep_val
+    dep_map, dep_by_solic = {}, {}
+    if "Departamento" in scm.columns:
+        if "SC" in scm.columns:
+            for sc_val, dep_val in zip(scm["SC"], scm["Departamento"]):
+                k = sc_key(sc_val)
+                if k and k not in dep_map:
+                    dep_map[k] = dep_val
+        if "Solicitante" in scm.columns:
+            for sol_val, dep_val in zip(scm["Solicitante"], scm["Departamento"]):
+                k = norm(sol_val)
+                if k and k not in dep_by_solic and dep_val != "SEM DEPARTAMENTO":
+                    dep_by_solic[k] = dep_val
 
-    # Se veio a planilha "Solicitações" (mais atualizada), ela sobrepõe a aba
-    # SCM como fonte dos itens em aberto; o Departamento vem do dep_map por SC.
+    def _resolver_depto(sc_val, sol_val):
+        d = dep_map.get(sc_key(sc_val))
+        if d and d != "SEM DEPARTAMENTO":
+            return d
+        return dep_by_solic.get(norm(sol_val), "SEM DEPARTAMENTO")
+
+    # Solicitações (mais atualizada) é a fonte dos itens em aberto; sobrepõe a
+    # aba SCM. O Departamento vem dos mapas acima (SC > Solicitante).
     if solic is not None:
         src = solic.copy()
         if "SC" in src.columns:
-            src["Departamento"] = src["SC"].map(lambda v: dep_map.get(sc_key(v), "SEM DEPARTAMENTO"))
-            _match = src["SC"].map(lambda v: sc_key(v) in dep_map)
+            _sol = src["Solicitante"] if "Solicitante" in src.columns else pd.Series([None] * len(src), index=src.index)
+            src["Departamento"] = [_resolver_depto(sc, sl) for sc, sl in zip(src["SC"], _sol)]
+            _match = src["Departamento"] != "SEM DEPARTAMENTO"
             print(f"  Fonte de itens: Solicitações ({len(src):,} linhas) | "
-                  f"SCs com depto cruzado: {int(_match.sum()):,} | "
-                  f"sem match: {int((~_match).sum()):,}")
+                  f"com depto cruzado: {int(_match.sum()):,} | "
+                  f"sem depto: {int((~_match).sum()):,}")
         else:
             src["Departamento"] = "SEM DEPARTAMENTO"
     else:
         src = scm.copy()
+        if "Departamento" not in src.columns:
+            src["Departamento"] = "SEM DEPARTAMENTO"
         print(f"  Fonte de itens: aba SCM do Relatório ({len(src):,} linhas)")
 
     src["_aprov"] = pd.to_datetime(src.get("Aprovação"), errors="coerce")
@@ -485,6 +569,95 @@ def processar(scm, sc7, solic=None):
         ie = len(g); ien = len(ge)
         it_emit_s.append(int(ie)); it_entr_s.append(int(ien)); it_ag_s.append(int(max(0, ie - ien)))
 
+    # ---------------- SLA: Aprovação do gestor -> Emissão do P.O. ----------------
+    # Mede os dias corridos entre a aprovação da SC e a emissão do Pedido (P.O.).
+    # Mesma regra, duas granularidades (o dashboard tem um gráfico para cada):
+    #   - por ITEM   -> 1 linha por item de SC, usando o Pedido daquele item.
+    #   - por PEDIDO -> 1 linha por Pedido (P.O.); a aprovação considerada é a
+    #                   MAIS ANTIGA entre os itens que ele atende (pior espera).
+    # Origem de cada peça:
+    #   - Data de Aprovação -> Solicitações (src), por item
+    #   - vínculo item -> Pedido -> Solicitações (o Relatório de Compras não traz
+    #                             o nº da SC preenchido na aba SC7)
+    #   - Data de Emissão do Pedido -> Relatório de Compras (autoritativa),
+    #                             cruzada pelo nº do Pedido (Numero PC)
+    #   - SLA (dias) = Emissão do Pedido - Aprovação
+    pc_solic = "Numero PC" if "Numero PC" in src_f.columns else (
+               "Pedido" if "Pedido" in src_f.columns else None)
+
+    # Pedido -> emissão mais antiga (Relatório de Compras)
+    if pc_solic and "Numero PC" in sc7.columns:
+        comp = sc7[["Numero PC", "DT Emissao"]].copy()
+        comp["__pc"] = comp["Numero PC"].map(sc_key)
+        comp["_emiss_po"] = pd.to_datetime(comp["DT Emissao"], errors="coerce")
+        comp = comp.dropna(subset=["_emiss_po"])
+        comp = comp[comp["__pc"] != ""]
+        comp_min = comp.groupby("__pc", as_index=False)["_emiss_po"].min()
+    else:
+        comp_min = pd.DataFrame({"__pc": pd.Series(dtype="object"),
+                                 "_emiss_po": pd.Series(dtype="datetime64[ns]")})
+
+    # Base por ITEM: cada linha de Solicitações com o Pedido dela.
+    _keep = [c for c in ["SC", "Item", "Descrição", "_aprov", "Departamento",
+                         "Comprador", "Solicitante", "Data Necessidade"]
+             if c in src_f.columns]
+    if pc_solic and pc_solic not in _keep:
+        _keep.append(pc_solic)
+    sla = src_f[_keep].dropna(subset=["_aprov"]).copy()
+    sla["__k"] = sla["SC"].map(sc_key)
+    sla = sla[sla["__k"] != ""]
+    sla["Pedido"] = sla[pc_solic] if pc_solic else ""
+    sla["__pc"] = sla["Pedido"].map(sc_key) if pc_solic else ""
+    sla = sla.merge(comp_min, on="__pc", how="left")
+
+    # Base por PEDIDO: 1 linha por P.O. (aprovação mais antiga entre seus itens).
+    _ped = sla[sla["__pc"] != ""]
+    sla_ped = _ped.sort_values("_aprov").groupby("__pc", as_index=False).first()
+    if len(sla_ped):
+        _cnt = (_ped.groupby("__pc")
+                    .agg(**{"Itens no Pedido": ("__pc", "size"),
+                            "SCs no Pedido": ("__k", "nunique")})
+                    .reset_index())
+        sla_ped = sla_ped.merge(_cnt, on="__pc", how="left")
+    else:
+        sla_ped["Itens no Pedido"] = 0
+        sla_ped["SCs no Pedido"] = 0
+
+    def _derivar_sla(df):
+        """Colunas de SLA + classificações auxiliares (comuns às duas visões)."""
+        df["Data de Aprovação"] = df["_aprov"]
+        df["Data de Emissão do Pedido"] = df["_emiss_po"]
+        df["SLA (dias)"] = (df["_emiss_po"] - df["_aprov"]).dt.days
+        df["__faixa_sla"] = df["SLA (dias)"].apply(categorizar_sla)
+        # Classificações auxiliares (para futuras análises; não viram indicador):
+        #  - Crítica  = Data de Necessidade a menos de SLA dias da aprovação.
+        #  - Atrasada = passou o SLA desde a aprovação e ainda não há Pedido emitido.
+        if "Data Necessidade" in df.columns:
+            _nec = pd.to_datetime(df["Data Necessidade"], errors="coerce")
+            df["Crítica"] = np.where((_nec - df["_aprov"]).dt.days < SLA_EMISSAO_DIAS, "Sim", "")
+        else:
+            df["Crítica"] = ""
+        _sem_po = df["_emiss_po"].isna()
+        _dias_aberto = (hoje - df["_aprov"]).dt.days
+        df["Atrasada"] = np.where(_sem_po & (_dias_aberto > SLA_EMISSAO_DIAS), "Sim", "")
+        return df
+
+    def _faixas_sla(df):
+        """Série do donut: só as faixas com quantidade > 0 (linhas com Pedido)."""
+        fxs = df["__faixa_sla"].value_counts()
+        labels, values, colors = [], [], []
+        for f in FAIXAS_SLA:
+            q = int(fxs.get(f, 0))
+            if q > 0:
+                labels.append(f); values.append(q); colors.append(CORES_SLA[f])
+        total = sum(values)
+        pct = [round(v / total * 100, 1) if total else 0 for v in values]
+        return {"labels": labels, "values": values, "pct": pct,
+                "colors": colors, "total": total}
+
+    sla = _derivar_sla(sla)
+    sla_ped = _derivar_sla(sla_ped)
+
     # =====================================================================
     # Registros para drill-down
     # =====================================================================
@@ -514,6 +687,28 @@ def processar(scm, sc7, solic=None):
         po_specs.append({"key": k, "label": k, "principal": False, "hidden": True})
     po_records = df_to_records(po, po_specs)
 
+    # Drill-down do SLA: colunas principais na ordem pedida; o resto aparece só
+    # com "Ver todos os campos". As duas visões (item/pedido) usam o mesmo
+    # esquema, mudando só as colunas principais.
+    def _sla_specs(df, principais, extras):
+        specs = [{"key": k, "label": k, "principal": True} for k in principais]
+        for k in extras:
+            if k in df.columns and k not in principais:
+                specs.append({"key": k, "label": k, "principal": False})
+        specs.append({"key": "__faixa_sla", "label": "faixa",
+                      "principal": False, "hidden": True})
+        return specs
+
+    _sla_extras = ["Data Necessidade", "Solicitante", "Departamento", "Comprador",
+                   "Crítica", "Atrasada"]
+    sla_records = df_to_records(sla, _sla_specs(
+        sla, ["SC", "Item", "Descrição", "Data de Aprovação", "Pedido",
+              "Data de Emissão do Pedido", "SLA (dias)"], _sla_extras))
+    sla_ped_records = df_to_records(sla_ped, _sla_specs(
+        sla_ped, ["Pedido", "Data de Emissão do Pedido", "SC", "Data de Aprovação",
+                  "SLA (dias)", "Itens no Pedido"],
+        ["SCs no Pedido"] + _sla_extras))
+
     # =====================================================================
     # Payload
     # =====================================================================
@@ -538,8 +733,11 @@ def processar(scm, sc7, solic=None):
                        "emitidos": pos_emit_s, "entregues": pos_entr_s, "aguardando": pos_ag_s},
             "po_itens": {"labels": po_labels, "meses": po_meses,
                          "emitidos": it_emit_s, "entregues": it_entr_s, "aguardando": it_ag_s},
+            "sla": _faixas_sla(sla),            # por Item
+            "sla_ped": _faixas_sla(sla_ped),    # por Pedido (P.O.)
         },
-        "records": {"cot": cot_records, "po": po_records},
+        "records": {"cot": cot_records, "po": po_records,
+                    "sla": sla_records, "sla_ped": sla_ped_records},
         "meta": {"registros": registros},
     }
     snap = {
@@ -553,10 +751,28 @@ def processar(scm, sc7, solic=None):
 # =====================================================================
 # Histórico / snapshots
 # =====================================================================
-def salvar_snapshot(wk, ano, label, gerado, periodo, snap):
+# Séries guardadas no snapshot além dos KPIs. Só os agregados (labels/values),
+# alguns KB — é o que permite comparar GRÁFICOS entre semanas, e não apenas
+# números. Os registros do drill-down nunca vão para o histórico.
+CHARTS_NO_SNAPSHOT = ["aging", "deptos", "comp_ind", "comp_time", "sla", "sla_ped"]
+
+
+def _resumir_charts(dash):
+    resumo = {}
+    for chave in CHARTS_NO_SNAPSHOT:
+        ch = dash.get("charts", {}).get(chave)
+        if not ch or "labels" not in ch:
+            continue
+        resumo[chave] = {"labels": ch["labels"], "values": ch.get("values", [])}
+    return resumo
+
+
+def salvar_snapshot(wk, ano, label, gerado, periodo, snap, dash=None):
     os.makedirs(DATA_DIR, exist_ok=True)
     payload = {"wk": wk, "ano": ano, "label": label, "gerado_em": gerado,
                "periodo": periodo, **snap}
+    if dash is not None:
+        payload["charts"] = _resumir_charts(dash)
     with open(os.path.join(DATA_DIR, f"WK{wk:02d}_{ano}.json"), "w", encoding="utf-8") as f:
         json.dump(payload, f, ensure_ascii=False, indent=2, default=_json_default)
 
@@ -583,8 +799,13 @@ def _ler_asset(nome):
         return f.read()
 
 
-def render(dash, hist, wk, ano, label, gerado, arquivo):
-    with open(TEMPLATE, "r", encoding="utf-8") as f:
+def render(dash, hist, wk, ano, label, gerado, arquivo, template=None, saida=None):
+    """Injeta os dados no template e grava o HTML.
+
+    `template` permite gerar com o layout novo (template_moderno.html) sem
+    mexer no fluxo manual, que continua usando template_dashboard.html."""
+    caminho_template = template or TEMPLATE
+    with open(caminho_template, "r", encoding="utf-8") as f:
         html = f.read()
 
     # Embute as bibliotecas Chart.js DENTRO do HTML (autossuficiente).
@@ -613,7 +834,8 @@ def render(dash, hist, wk, ano, label, gerado, arquivo):
     html = html.replace("__ARQUIVO__", dash["meta"]["arquivo"])
     html = html.replace("__SLA__", str(SLA_ATRASO_DIAS))
 
-    out = os.path.join(WK_DIR, f"Dashboard SCM {label}.html")
+    out = saida or os.path.join(WK_DIR, f"Dashboard SCM {label}.html")
+    os.makedirs(os.path.dirname(out), exist_ok=True)
     with open(out, "w", encoding="utf-8") as f:
         f.write(html)
     return out
@@ -627,15 +849,14 @@ def main():
     print(" Gerador de Dashboard SCM Semanal")
     print("=" * 60)
 
-    arquivo = pick_file()
-    if not arquivo:
-        print("ERRO: nenhuma planilha encontrada/selecionada.")
+    print("Localizando planilhas ...")
+    solic_arq, compras_arq, scs_arq = resolver_arquivos()
+    if not solic_arq and not scs_arq:
+        print("ERRO: nenhuma fonte de itens (Solicitações/Relatório de SCs) encontrada.")
         input("Pressione Enter para sair..."); return
 
-    solic_arq = pick_solicitacoes(relatorio=arquivo)
-
-    print(f"Lendo: {os.path.basename(arquivo)} ...")
-    scm, sc7, solic = carregar(arquivo, solic_arq)
+    print("Lendo planilhas ...")
+    scm, sc7, solic = carregar(scs_arq, solic_arq, compras_arq)
     print(f"  SCM: {len(scm):,} linhas | SC7: {len(sc7):,} linhas"
           + (f" | Solicitações: {len(solic):,} linhas" if solic is not None else ""))
 
@@ -661,9 +882,8 @@ def main():
         print(f"ERRO: template não encontrado: {TEMPLATE}")
         input("Pressione Enter para sair..."); return
 
-    fonte = os.path.basename(arquivo)
-    if solic is not None and solic_arq:
-        fonte += " + " + os.path.basename(solic_arq)
+    fontes = [os.path.basename(p) for p in (solic_arq, compras_arq, scs_arq) if p]
+    fonte = " + ".join(fontes) if fontes else "—"
     out = render(dash, hist, wk, ano, label, gerado, fonte)
     size_mb = os.path.getsize(out) / 1e6
     print(f"Dashboard gerado: {out}  ({size_mb:.1f} MB)")

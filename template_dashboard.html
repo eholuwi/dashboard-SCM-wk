@@ -68,6 +68,8 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;background:var(--bg
 /* tooltip bubble */
 .info{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#F3F4F6;color:var(--ink2);font-weight:700;font-size:11px;cursor:help;border:1px solid var(--border);position:relative}
 .info:hover::after{content:attr(data-t);position:absolute;bottom:140%;left:50%;transform:translateX(-50%);background:rgba(17,24,39,.96);color:#fff;padding:7px 9px;border-radius:6px;width:230px;font-size:11px;font-weight:500;z-index:80;text-align:left;line-height:1.4}
+/* variante mais larga p/ textos de ajuda longos (mantém o mesmo componente) */
+.info.help-wide:hover::after{width:min(340px,80vw);white-space:pre-line}
 
 /* AGING detail list */
 .agl{list-style:none;display:flex;flex-direction:column;gap:0}
@@ -151,19 +153,6 @@ table.data tr:hover{background:#FFF7ED}
     </div>
 
     <div class="sec">
-      <h2>Status dos Pedidos de Compra (POs) <span class="info" data-t="POs e itens emitidos/entregues/aguardando por mês (escopo do time). Entregue = Qtd.Entregue > 0.">?</span></h2>
-      <div class="legend">
-        <span><i class="dot" style="background:var(--primary)"></i>Emitidos</span>
-        <span><i class="dot" style="background:var(--success)"></i>Entregues</span>
-        <span><i class="dot" style="background:var(--danger)"></i>Aguardando</span>
-      </div>
-      <div class="grid2">
-        <div class="card tall"><h3>Qtd. de Pedidos (POs)</h3><div class="cw"><canvas id="c_po_pos" class="clickable"></canvas></div></div>
-        <div class="card tall"><h3>Qtd. de Itens por Pedido</h3><div class="cw"><canvas id="c_po_itens" class="clickable"></canvas></div></div>
-      </div>
-    </div>
-
-    <div class="sec">
       <h2>Aging dos itens em aberto <span class="info" data-t="Tempo (dias) desde a aprovação até hoje para os itens ainda em aberto (cotação). Mostra apenas os itens com mais de 15 dias, que já estão fora do SLA e em atraso. Clique numa fatia ou faixa para detalhar.">?</span></h2>
       <div class="grid-asym">
         <div class="card tall"><h3>Distribuição por Faixa de Dias</h3><div class="cw"><canvas id="c_aging" class="clickable"></canvas></div></div>
@@ -182,6 +171,35 @@ table.data tr:hover{background:#FFF7ED}
       <div class="grid2">
         <div class="card"><h3 class="big">Qtd. de Itens por Mês (SCs) <span class="info" data-t="Quantidade de itens em aberto do departamento selecionado, por mês de emissão. Clique numa barra para ver os itens.">?</span></h3><div class="cw"><canvas id="c_sel_itens_mes" class="clickable"></canvas></div></div>
         <div class="card"><h3 class="big">Qtd. de SCs por Mês <span class="info" data-t="Quantidade de SCs em aberto do departamento selecionado, por mês de emissão. Clique numa barra para ver as SCs.">?</span></h3><div class="cw"><canvas id="c_sel_scs_mes" class="clickable"></canvas></div></div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>Status dos Pedidos de Compra (POs) <span class="info" data-t="POs e itens emitidos/entregues/aguardando por mês (escopo do time). Entregue = Qtd.Entregue > 0.">?</span></h2>
+      <div class="legend">
+        <span><i class="dot" style="background:var(--primary)"></i>Emitidos</span>
+        <span><i class="dot" style="background:var(--success)"></i>Entregues</span>
+        <span><i class="dot" style="background:var(--danger)"></i>Aguardando</span>
+      </div>
+      <div class="grid2">
+        <div class="card tall"><h3>Qtd. de Pedidos (POs)</h3><div class="cw"><canvas id="c_po_pos" class="clickable"></canvas></div></div>
+        <div class="card tall"><h3>Qtd. de Itens por Pedido</h3><div class="cw"><canvas id="c_po_itens" class="clickable"></canvas></div></div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2><strong>SLA</strong> Aprovação do Gestor × Emissão do P.O. por Item <span class="info help-wide" data-t="O que é: mede o tempo entre a aprovação da SC pelo gestor e a emissão do Pedido de Compra pelo comprador, item a item.&#10;&#10;Origem dos dados: cruzamento de Solicitações.xlsx (Data de Aprovação da SC) e Relatório de Compras.xlsx / SC7 (Pedido e Data de Emissão).&#10;&#10;Como é calculado: SLA = Data de Emissão do Pedido do item − Data de Aprovação da SC (dias corridos). Cada item da SC conta uma vez; itens ainda sem Pedido ficam fora do gráfico.&#10;&#10;Objetivo: identificar tempo de resposta do comprador, eficiência do processo de compras, concentração de atendimentos urgentes, backlog e o cumprimento do SLA interno de emissão (15 dias).">?</span></h2>
+      <div class="grid-asym">
+        <div class="card tall"><h3>Distribuição por Faixa de Dias (Aprovação → Emissão)</h3><div class="cw"><canvas id="c_sla" class="clickable"></canvas></div></div>
+        <div class="card"><h3>📋 Detalhamento</h3><ul class="agl" id="sla_list"></ul></div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2><strong>SLA</strong> Aprovação do Gestor × Emissão do P.O. por Pedido <span class="info help-wide" data-t="O que é: a mesma medida da seção anterior, agora por Pedido de Compra (P.O.) — cada Pedido conta uma vez, mesmo que atenda vários itens ou várias SCs.&#10;&#10;Origem dos dados: cruzamento de Solicitações.xlsx (Data de Aprovação da SC) e Relatório de Compras.xlsx / SC7 (Pedido e Data de Emissão).&#10;&#10;Como é calculado: SLA = Data de Emissão do Pedido − Data de Aprovação MAIS ANTIGA entre os itens que o Pedido atende (dias corridos), ou seja, a maior espera coberta por aquele Pedido.&#10;&#10;Objetivo: ver o SLA na unidade em que o comprador trabalha (o Pedido), sem que Pedidos com muitos itens pesem mais que os demais.">?</span></h2>
+      <div class="grid-asym">
+        <div class="card tall"><h3>Distribuição por Faixa de Dias (Aprovação → Emissão)</h3><div class="cw"><canvas id="c_sla_ped" class="clickable"></canvas></div></div>
+        <div class="card"><h3>📋 Detalhamento</h3><ul class="agl" id="sla_ped_list"></ul></div>
       </div>
     </div>
   </div>
@@ -425,6 +443,29 @@ document.getElementById('aging_list').innerHTML=ch.aging.labels.map((l,i)=>
   '<li data-f="'+encodeURIComponent(l)+'"><span class="l"><i class="cdot" style="background:'+ch.aging.colors[i]+'"></i>'+l+'</span>'+
   '<span><b style="color:'+ch.aging.colors[i]+'">'+ch.aging.values[i]+'</b> <span class="muted">('+ch.aging.pct[i]+'%)</span></span></li>').join('');
 document.querySelectorAll('#aging_list li').forEach(li=>li.onclick=()=>{const l=decodeURIComponent(li.dataset.f);openDrill('Aging: '+l,'cot',[['__faixa','eq',l]]);});
+
+/* 7b. SLA Aprovação → Emissão do P.O. (mesmo padrão visual do Aging).
+   Duas visões da mesma regra: por Item e por Pedido. */
+function slaDonut(canvasId,listId,data,centerLabel,dsName,titulo){
+  if(!data || !data.labels || !data.labels.length) return;
+  const total=data.total;
+  const centerTextSla={id:'ct_'+canvasId,afterDraw(chart){if(chart.config.type!=='doughnut')return;const{ctx,chartArea:{left,top,width,height}}=chart;ctx.save();const x=left+width/2,y=top+height/2;
+    ctx.textAlign='center';ctx.textBaseline='middle';ctx.font="bold 34px 'Arial Black',Arial";ctx.fillStyle=C.ink;ctx.fillText(String(total),x,y-10);
+    ctx.font="500 13px 'Inter'";ctx.fillStyle=C.muted;ctx.fillText(centerLabel,x,y+16);ctx.restore();}};
+  new Chart(c(canvasId),{type:'doughnut',data:{labels:data.labels,datasets:[{data:data.values,backgroundColor:data.colors,borderColor:C.white,borderWidth:3,hoverOffset:8}]},
+    options:{cutout:'62%',responsive:true,maintainAspectRatio:false,
+      onClick:onBar(i=>openDrill(titulo+': '+data.labels[i],dsName,[['__faixa_sla','eq',data.labels[i]]])),
+      plugins:{legend:{position:'bottom',labels:{color:C.muted,font:{size:11},padding:12,usePointStyle:true}},
+        datalabels:{color:C.white,font:{weight:'bold',size:11,family:"'Arial Black'"},formatter:v=>v>=10?v:''}}},plugins:[centerTextSla]});
+
+  const ul=document.getElementById(listId);
+  ul.innerHTML=data.labels.map((l,i)=>
+    '<li data-f="'+encodeURIComponent(l)+'"><span class="l"><i class="cdot" style="background:'+data.colors[i]+'"></i>'+l+'</span>'+
+    '<span><b style="color:'+data.colors[i]+'">'+data.values[i]+'</b> <span class="muted">('+data.pct[i]+'%)</span></span></li>').join('');
+  ul.querySelectorAll('li').forEach(li=>li.onclick=()=>{const l=decodeURIComponent(li.dataset.f);openDrill(titulo+': '+l,dsName,[['__faixa_sla','eq',l]]);});
+}
+slaDonut('c_sla','sla_list',ch.sla,'Itens','sla','SLA por Item');
+slaDonut('c_sla_ped','sla_ped_list',ch.sla_ped,'Pedidos','sla_ped','SLA por Pedido');
 
 /* 8. aging por depto */
 new Chart(c('c_aging_depto'),{type:'bar',data:{labels:ch.aging_depto.labels,datasets:[{data:ch.aging_depto.values,backgroundColor:C.danger,borderRadius:6,barPercentage:.7}]},
